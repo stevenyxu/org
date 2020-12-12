@@ -5,15 +5,10 @@ export default function Repos(props) {
     const [repos, setRepos] = useState([]);
 
     useEffect(() => {
-        let cancelled = false;
-        Client.getRepos(props.orgId).then((repos) => {
-            if (cancelled) return;
-            setRepos(repos);
-        });
-        return () => {
-            cancelled = true;
-        }
-    })
+        const promise = Client.getRepos(props.orgId)
+        // TODO: Guard against race condition.
+        promise.then(setRepos);
+    }, [props.orgId]);
 
     return (
         <table>
@@ -26,7 +21,7 @@ export default function Repos(props) {
             <tbody>
                 {repos.map((repo) => {
                     return (
-                        <tr>
+                        <tr key={repo['id']}>
                             <td>{repo['id']}</td>
                             <td>{repo['name']}</td>
                         </tr>
