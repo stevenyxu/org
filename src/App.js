@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Client from "./client/Client.js";
-import Repos from "./Repos.js";
+import Repos from "./repos/Repos.js";
 
 function App() {
   const [org, setOrg] = useState("netflix");
