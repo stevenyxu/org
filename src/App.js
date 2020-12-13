@@ -22,7 +22,7 @@ function App() {
           code
         </a>
       </header>
-      <main className="p-2">
+      <main className="sm:p-2">
         <Repos client={client} org={org}></Repos>
       </main>
     </>

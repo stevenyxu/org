@@ -1,11 +1,12 @@
 export default function RepoHeader(props) {
   return (
-    <th className="text-left bg-gray-200 py-1 px-2 sticky top-0 z-10">
+    <th className="text-left bg-gray-200 py-1 sm:px-2 sticky top-0 z-10">
       <button
         className="font-medium uppercase whitespace-nowrap px-2"
         onClick={() => props.toggleSort(props.sortKey)}
       >
         {props.displayName}
+        &nbsp;
         {props.sortAsc && (
           <svg
             className="inline w-4"
