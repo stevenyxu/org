@@ -15,7 +15,7 @@ function App() {
   return (
     <Router>
       <Route path="/:org">
-        <Header></Header>
+        <Header client={client}></Header>
       </Route>
       <main className="sm:p-2">
         <Switch>

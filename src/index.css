@@ -5,3 +5,7 @@
 body {
   @apply bg-gray-100;
 }
+
+abbr[title] {
+  text-underline-offset: 2px;
+}
