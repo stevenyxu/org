@@ -5,13 +5,17 @@ export default function Repos(props) {
   const [repos, setRepos] = useState([]);
   const [sortKey, setSortKey] = useState("forks");
   const [sortDesc, setSortDesc] = useState(true);
+  const [maxForks, setMaxForks] = useState(Number.MAX_VALUE);
+  const [maxStargazersCount, setMaxStargazersCount] = useState(
+    Number.MAX_VALUE
+  );
 
   function toggleSort(key) {
     if (sortKey === key) {
       setSortDesc(!sortDesc);
     } else {
       setSortKey(key);
-      setSortDesc(true);
+      setSortDesc(key !== "name");
     }
   }
 
@@ -19,7 +23,21 @@ export default function Repos(props) {
     setRepos([]);
     const promise = props.client.getRepos(props.org, sortKey, sortDesc);
     // TODO: Guard against race condition.
-    promise.then(setRepos);
+    promise.then((repos) => {
+      setRepos(repos);
+      let newMaxForks = 1;
+      let newMaxStargazersCount = 1;
+      repos.forEach((repo) => {
+        if (repo["forks"] > newMaxForks) {
+          newMaxForks = repo["forks"];
+        }
+        if (repo["stargazers_count"] > newMaxStargazersCount) {
+          newMaxStargazersCount = repo["stargazers_count"];
+        }
+      });
+      setMaxForks(newMaxForks);
+      setMaxStargazersCount(newMaxStargazersCount);
+    });
   }, [props.client, props.org, sortKey, sortDesc]);
 
   return (
@@ -64,8 +82,31 @@ export default function Repos(props) {
                     {repo["name"]}
                   </a>
                 </td>
-                <td className="py-1 px-4">{repo["forks"]}</td>
-                <td className="py-1 px-4">{repo["stargazers_count"]}</td>
+                <td className="py-1 px-4 relative z-0">
+                  <span
+                    className="absolute bg-blue-100 top-0 left-0 h-full"
+                    style={{
+                      width:
+                        (100 * Math.sqrt(repo["forks"])) / Math.sqrt(maxForks) +
+                        "%",
+                    }}
+                  ></span>
+                  <span className="relative z-10">{repo["forks"]}</span>
+                </td>
+                <td className="py-1 px-4 relative z-0">
+                  <span
+                    className="absolute bg-yellow-100 top-0 left-0 h-full"
+                    style={{
+                      width:
+                        (100 * Math.sqrt(repo["stargazers_count"])) /
+                          Math.sqrt(maxStargazersCount) +
+                        "%",
+                    }}
+                  ></span>
+                  <span className="relative z-10">
+                    {repo["stargazers_count"]}
+                  </span>
+                </td>
                 <td aria-hidden="true" className="w-full"></td>
               </tr>
             );
