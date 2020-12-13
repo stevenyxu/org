@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import RepoColorBarCell from "./RepoColorBarCell";
 import RepoHeader from "./RepoHeader";
 
 export default function Repos(props) {
+  const { org } = useParams();
   const [repos, setRepos] = useState([]);
   const [sortKey, setSortKey] = useState("forks");
   const [sortDesc, setSortDesc] = useState(true);
@@ -25,7 +27,7 @@ export default function Repos(props) {
 
   useEffect(() => {
     setRepos([]);
-    const promise = props.client.getRepos(props.org, sortKey, sortDesc);
+    const promise = props.client.getRepos(org, sortKey, sortDesc);
     // TODO: Guard against race condition.
     promise.then((repos) => {
       setRepos(repos);
@@ -47,7 +49,7 @@ export default function Repos(props) {
       setMaxStargazersCount(newMaxStargazersCount);
       setMaxOpenIssuesCount(newMaxOpenIssuesCount);
     });
-  }, [props.client, props.org, sortKey, sortDesc]);
+  }, [props.client, org, sortKey, sortDesc]);
 
   return (
     <div className="shadow">
@@ -94,7 +96,7 @@ export default function Repos(props) {
               <tr key={repo["id"]} className="hover:bg-gray-100">
                 <td
                   aria-label={repo["name"]}
-                  role="rowheading"
+                  role="rowheader"
                   className="py-1 px-2 sm:px-4 w-40 whitespace-nowrap overflow-hidden overflow-ellipsis max-w-140px sm:max-w-sm"
                 >
                   <a href={`/${repo["full_name"]}`} className="hover:underline">
