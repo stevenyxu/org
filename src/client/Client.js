@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import cache from "./cache";
 
 export default class Client {
   constructor() {
@@ -8,9 +9,8 @@ export default class Client {
   }
 
   async getRepos(org) {
-    const response = await this.octokit.paginate("GET /orgs/{org}/repos", {
-      org,
-    });
-    return response;
+    return cache(`getRepos(${org})`, () =>
+      this.octokit.paginate("GET /orgs/{org}/repos", { org })
+    );
   }
 }
