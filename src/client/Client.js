@@ -8,9 +8,20 @@ export default class Client {
     });
   }
 
-  async getRepos(org) {
-    return cache(`getRepos(${org})`, () =>
+  async getRepos(org, sortKey, sortDesc) {
+    const repos = await cache(`getRepos(${org})`, () =>
       this.octokit.paginate("GET /orgs/{org}/repos", { org })
     );
+    return repos.sort((a, b) => {
+      let res;
+      if (a[sortKey] < b[sortKey]) {
+        res = -1;
+      } else if (a[sortKey] > b[sortKey]) {
+        res = 1;
+      } else {
+        res = 0;
+      }
+      return sortDesc ? -res : res;
+    });
   }
 }
