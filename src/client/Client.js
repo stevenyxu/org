@@ -58,7 +58,7 @@ class Client {
   }
 
   async getRepos(org, sortKey, sortDesc) {
-    const repos = await cache(`getRepos(${org})`, () =>
+    const repos = await cache(`getRepos(${org.toLowerCase()})`, () =>
       this.rateLimitWrap(() =>
         this.octokit.paginate("GET /orgs/{org}/repos", { org, per_page: 100 })
       )

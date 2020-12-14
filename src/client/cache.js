@@ -19,7 +19,7 @@ export default function cache(key, fn) {
   if (pending[key]) {
     return pending[key];
   }
-  pending[key] = new Promise(async (resolve) => {
+  pending[key] = new Promise(async (resolve, reject) => {
     const cachedRes = await get(key);
     if (
       cachedRes &&
@@ -29,7 +29,13 @@ export default function cache(key, fn) {
       resolve(cachedRes.value);
       return;
     }
-    const value = await fn();
+    let value;
+    try {
+      value = await fn();
+    } catch (e) {
+      reject(e);
+      return;
+    }
     const timestamp = new Date();
     await set(key, { value, version: VERSION, timestamp });
     delete pending[key];

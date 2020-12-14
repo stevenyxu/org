@@ -1,3 +1,4 @@
+import { Oval } from "svg-loaders-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import RepoColorBarCell from "./RepoColorBarCell";
@@ -15,6 +16,9 @@ export default function Repos(props) {
   const [maxOpenIssuesCount, setMaxOpenIssuesCount] = useState(
     Number.MAX_VALUE
   );
+  const [showAll, setShowAll] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
 
   function toggleSort(key) {
     if (sortKey === key) {
@@ -26,30 +30,50 @@ export default function Repos(props) {
   }
 
   useEffect(() => {
+    setShowAll(false);
+    setSortKey("forks");
+    setSortDesc(true);
+  }, [org]);
+
+  useEffect(() => {
     setRepos([]);
     const promise = props.client.getRepos(org, sortKey, sortDesc);
-    // TODO: Guard against race condition.
-    promise.then((repos) => {
-      setRepos(repos);
-      let newMaxForks = 1;
-      let newMaxStargazersCount = 1;
-      let newMaxOpenIssuesCount = 1;
-      repos.forEach((repo) => {
-        if (repo["forks"] > newMaxForks) {
-          newMaxForks = repo["forks"];
-        }
-        if (repo["stargazers_count"] > newMaxStargazersCount) {
-          newMaxStargazersCount = repo["stargazers_count"];
-        }
-        if (repo["open_issues_count"] > newMaxOpenIssuesCount) {
-          newMaxOpenIssuesCount = repo["open_issues_count"];
-        }
+    setIsPending(true);
+    let cancelled = false;
+    promise
+      .then((repos) => {
+        if (cancelled) return;
+        setIsPending(false);
+        let newMaxForks = 1;
+        let newMaxStargazersCount = 1;
+        let newMaxOpenIssuesCount = 1;
+        repos.forEach((repo) => {
+          if (repo["forks"] > newMaxForks) {
+            newMaxForks = repo["forks"];
+          }
+          if (repo["stargazers_count"] > newMaxStargazersCount) {
+            newMaxStargazersCount = repo["stargazers_count"];
+          }
+          if (repo["open_issues_count"] > newMaxOpenIssuesCount) {
+            newMaxOpenIssuesCount = repo["open_issues_count"];
+          }
+        });
+        setMaxForks(newMaxForks);
+        setMaxStargazersCount(newMaxStargazersCount);
+        setMaxOpenIssuesCount(newMaxOpenIssuesCount);
+        setError(null);
+        setRepos(repos.slice(0, showAll ? Number.MAX_VALUE : 100));
+      })
+      .catch((reason) => {
+        if (cancelled) return;
+        setIsPending(false);
+        setError(reason);
       });
-      setMaxForks(newMaxForks);
-      setMaxStargazersCount(newMaxStargazersCount);
-      setMaxOpenIssuesCount(newMaxOpenIssuesCount);
-    });
-  }, [props.client, org, sortKey, sortDesc]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [props.client, org, sortKey, sortDesc, showAll]);
 
   return (
     <div className="shadow">
@@ -140,6 +164,35 @@ export default function Repos(props) {
               </tr>
             );
           })}
+          {error && (
+            <tr className="bg-red-100">
+              <td colSpan="100" className="py-1 px-2 sm:px-4">
+                <span className="font-medium text-red-600">ERROR: </span>
+                {error["status"] === 404
+                  ? `${org} not found`
+                  : JSON.stringify(error)}
+              </td>
+            </tr>
+          )}
+          {isPending && (
+            <tr>
+              <td colSpan="100" className="py-1 px-2 sm:px-4">
+                <Oval stroke="#aaa"></Oval>
+              </td>
+            </tr>
+          )}
+          {!error && !isPending && !showAll && (
+            <tr>
+              <td colSpan="100">
+                <button
+                  className="py-1 px-2 sm:px-4 hover:underline"
+                  onClick={() => setShowAll(true)}
+                >
+                  show all (slow)
+                </button>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
