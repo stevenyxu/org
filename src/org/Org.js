@@ -1,6 +1,6 @@
 import { Oval } from "svg-loaders-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import RepoColorBarCell from "./RepoColorBarCell";
 import RepoHeader from "./RepoHeader";
 
@@ -19,6 +19,8 @@ export default function Org(props) {
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState(null);
   const [isPending, setIsPending] = useState(true);
+  const [prefetchRepo, setPrefetchRepo] = useState(null);
+  const [isPrefetching, setIsPrefetching] = useState(false);
 
   function toggleSort(key) {
     if (sortKey === key) {
@@ -38,6 +40,28 @@ export default function Org(props) {
     setSortKey("forks");
     setSortDesc(true);
   }, [org]);
+
+  useEffect(() => {
+    async function prefetch() {
+      if (isPrefetching || !prefetchRepo) return;
+      const repo = prefetchRepo;
+      setIsPrefetching(true);
+      props.client.listBranches(repo["owner"]["login"], repo["name"]);
+      await props.client.listCommits(
+        repo["owner"]["login"],
+        repo["name"],
+        repo["default_branch"]
+      );
+      setIsPrefetching(false);
+      if (prefetchRepo === repo) {
+        setPrefetchRepo(null);
+      }
+    }
+
+    if (!isPrefetching) {
+      prefetch();
+    }
+  }, [props.client, prefetchRepo, isPrefetching]);
 
   useEffect(() => {
     setRepos([]);
@@ -132,17 +156,22 @@ export default function Org(props) {
                   aria-label={repo["name"]}
                   role="rowheader"
                   className="py-1 px-2 sm:px-4 w-40 whitespace-nowrap overflow-hidden overflow-ellipsis max-w-140px sm:max-w-sm"
+                  onMouseEnter={() => setPrefetchRepo(repo)}
+                  onFocus={() => setPrefetchRepo(repo)}
                 >
-                  <a href={`/${repo["full_name"]}`} className="hover:underline">
+                  <Link
+                    to={`/${repo["full_name"]}`}
+                    className="hover:underline"
+                  >
                     <span className="text-gray-400 hidden sm:inline">
                       {repo["full_name"].match(/[^/]*/)}/
                     </span>
                     {repo["name"]}
-                  </a>
+                  </Link>
                   &nbsp;
                   <a
                     href={repo["html_url"]}
-                    className="inline-block hover:bg-gray-300 align-middle -mt-3 -mb-2 w-6 p-1"
+                    className="inline-block hover:bg-gray-300 align-middle -mt-3 -mb-2 w-6 p-1 hidden"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
