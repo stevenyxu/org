@@ -1,6 +1,6 @@
 # Org viewer
 
-**Demo:** https://org-viewer.stevenxu.ca/
+**Demo:** https://org.stevenxu.ca/
 
 ## Features
 
