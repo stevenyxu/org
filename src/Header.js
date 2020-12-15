@@ -21,7 +21,6 @@ const ORGS_SET = new Set([
   "facebookarchive",
   "dotnet",
   "mozilla",
-  "shadowsocks",
   "zeit",
   "twbs",
   "hashicorp",

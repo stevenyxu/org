@@ -1,5 +1,15 @@
 # Org viewer
 
+**Demo:** https://org-viewer.stevenxu.ca/
+
+## Features
+
+- List organization repos, sorted by forks, stars, and issues.
+- Show recent commits on repo branches.
+- Fast performance.
+  - Prefeching of orgs and repos.
+  - No network calls are needed with a fully warmed cache.
+
 ## Run
 
 This is generated from https://github.com/facebook/create-react-app. See
@@ -29,25 +39,30 @@ Recommended automated coverage priorities:
   tests to mock `client/Client.js` in tests.
 - Unit test most components, mocking out `client/Client.js`. Mostly snapshot
   tests. Some special cases worth coverage:
-  - `repos/Repos.js` has some rich error case handling and race condition
-    handling.
-  - `Header.js` does a lot of redirects to try to normalize capitalization.
+  - `org/Org.js` has some rich error case handling, race condition
+    handling, and special prefetching logic.
+  - `Header.js` also prefetches and has redirects to try to normalize
+    capitalization.
 
 ### Manual tests
 
-- Visit `/` and expect to be redirected to the org repo list page, by default
+- Visit `/` and expect to be redirected to the org page, by default
   `/kubernetes`.
-- Visit the org repo list page, for example `/kubernetes`.
+- Visit the org page, for example `/kubernetes`.
   - After page load, refresh and confirm IDB caching is working well.
   - Sort by each column, ascending and descending. Sorting should not produce
     network calls.
-  - Click on the repo link to go to the repo details page (see below).
+  - Click on the repo link to go to the repo page (see below).
   - Click on the github icon to go to the Github repository.
   - Click on the issues link to go to Github issues.
   - Change orgs very quickly to ensure that pending requests don't result in
-    race conditions like the wrong org's repos showing up.
+    race conditions like the wrong org's repos showing up. Note: this test is
+    complicated by the cache and won't really work once the prefetch has warmed
+    the `microsoft` and `shadowsocks` pages. Clear the IDB cache first. In
+    practice, these two orgs are late in the prefetch order, so you have some
+    time to execute this test. If `microsoft` loads instantly, you're too late.
     - `microsoft` is a good example of an org with a very long cold load time
-      (38 pages). Go to `microsoft` then go to `tensorflow` (1 page). A few
+      (38 pages). Go to `microsoft` then go to `shadowsocks` (1 page). A few
       things should happen:
       - The `microsoft` paginated requests should continue in the background
         and would be viewable in a network inspector. Technically this is an
@@ -170,3 +185,50 @@ to add commit activity, which is also sortable) and an unintrusive colorful
 visualization for seeing magnitude at a glance.
 - Github doesn't have one click to go to commits on a repo. This UI does.
 - This UI is way faster.
+
+### Future directions
+
+- More org page features
+  - Show visualization of last year's commit activity
+    ([API](https://octokit.github.io/rest.js/v18#repos-get-commit-activity-stats)).
+    Without modifications will be intensive on rate limits. Possibly a
+    GraphQL API exists to get this directly from the org page and not incur
+    an API call per repo in an organization org page.
+  - Add grid key navigation. I left off links on the forks and stars numbers
+    (issues had links) to limit the number of tab stops on the page for
+    keyboard users. Using the ARIA grid pattern with a single tab stop and
+    roving tabindex with arrow key navigation would be nice. Typeahead could
+    also be supported to go to the cell after a key sequence is pressed.
+- More repo page features
+  - Show issue and PR links in commit history. Most popular repos maintain
+    good issue tagging but this doesn't come through in Github's default
+    [commit list page](https://github.com/angular/components/commits/master)
+    so it's hard to tell what themes are being worked on.
+  - Clean up cleanup commits from commit history. Github's commit list page
+    also has this issue.
+- General improvements
+  - OAuth key exchange to get real credentials and not just use a fixed
+    anonymous access token. The current token approach can't access private
+    data and will run into scaling issues with multiple users due to Github's
+    5000 per hour rate limit. The client-side caching is easily portable to
+    using OAuthed keys while preserving user privacy since no data leaves the
+    browser. `client/Client.js` should be updated to clear the cache on key
+    changes (or scope cache entries by user) so it doesn't leak data between
+    users or show stale unprivileged data when a new key comes in and can see
+    more.
+  - Persist custom organizations added. Allow reordering. Most people using
+    this probably just want their own list of orgs.
+  - Create an additional cache layer on the server for much better
+    performance, especially on slow list fetches. Mostly only
+    `client/Client.js` would need to be updated. Care would have to be taken
+    to protect private information if we start handling privileged keys.
+  - Do server-side pagination. The gain is probably not worth it given the
+    size of even larger orgs since most of the latency comes from pagination
+    round trips and the Github API's high standards for consistency (which we
+    can obviously relax for an inspection tool like this), rather than sheer
+    volume of the total response.
+- UX research
+  - I've done next to no work passing this UI by real users except for my cat.
+    Additional work to shop around the design is warranted, focusing first on
+    clearing up points of confusion, then branching out with feature requests
+    and reacting to real world usage patterns.
