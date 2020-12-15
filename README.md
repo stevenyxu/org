@@ -15,6 +15,19 @@
 This is generated from https://github.com/facebook/create-react-app. See
 there for more info.
 
+This installs like a standard node.js app. If you don't have node.js, follow
+steps at https://github.com/nvm-sh/nvm to install a suitably recent version of
+node.js. Something like the following might work (adapt as needed):
+
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
+. ~/.bashrc
+nvm install node
+git clone git@github.com:stevenyxu/org-viewer.git
+cd org-viewer
+npm install
+```
+
 ### `npm start`
 
 Runs a dev server at http://localhost:3000/.
