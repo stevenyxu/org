@@ -29,17 +29,6 @@ class Client {
   }
 
   /**
-   * Calls the contained function and calls updateRateLimit.
-   *
-   * @param {*} fn
-   */
-  async rateLimitWrap(fn) {
-    const res = await fn();
-    this.updateRateLimit();
-    return res;
-  }
-
-  /**
    * Gets the latest rate limit and if changed emits to the subscribers.
    */
   async updateRateLimit() {
@@ -57,12 +46,57 @@ class Client {
     }
   }
 
-  async getRepos(org, sortKey, sortDesc) {
-    const repos = await cache(`getRepos(${org.toLowerCase()})`, () =>
-      this.rateLimitWrap(() =>
-        this.octokit.paginate("GET /orgs/{org}/repos", { org, per_page: 100 })
-      )
-    );
+  getRepo(org, repo) {
+    return cache(`getRepo(${org},${repo})`, async () => {
+      const res = await this.octokit.repos.get({ owner: org, repo });
+      return res.data;
+    });
+  }
+
+  async listBranches(org, repo) {
+    const repoInfo = await this.getRepo(org, repo);
+    const defaultBranch = repoInfo["default_branch"];
+    const branches = await cache(`listBranches(${org},${repo})`, async () => {
+      const res = await this.octokit.paginate(
+        "GET /repos/{owner}/{repo}/branches",
+        {
+          owner: org,
+          repo,
+        }
+      );
+      this.updateRateLimit();
+      return res;
+    });
+    branches.forEach((branch) => {
+      if (branch["name"] === defaultBranch) {
+        branch["default"] = true;
+      }
+    });
+    return branches;
+  }
+
+  async listCommits(org, repo, branch) {
+    return cache(`listCommits(${org},${repo},${branch})`, async () => {
+      const res = await this.octokit.repos.listCommits({
+        owner: org,
+        repo,
+        sha: branch,
+      });
+      this.updateRateLimit();
+      return res.data;
+    });
+  }
+
+  async listRepos(org, sortKey, sortDesc) {
+    const repos = await cache(`listRepos(${org})`, async () => {
+      const res = await this.octokit.paginate("GET /orgs/{org}/repos", {
+        org,
+        per_page: 100,
+      });
+      this.updateRateLimit();
+      return res;
+    });
+    if (!sortKey) return repos;
     return repos.sort((a, b) => {
       let res;
       if (a[sortKey] < b[sortKey]) {

@@ -18,7 +18,7 @@ export default function Repos(props) {
   );
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState(null);
-  const [isPending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = useState(true);
 
   function toggleSort(key) {
     if (sortKey === key) {
@@ -30,6 +30,10 @@ export default function Repos(props) {
   }
 
   useEffect(() => {
+    document.title = `${org} - Org viewer`;
+  });
+
+  useEffect(() => {
     setShowAll(false);
     setSortKey("forks");
     setSortDesc(true);
@@ -37,7 +41,7 @@ export default function Repos(props) {
 
   useEffect(() => {
     setRepos([]);
-    const promise = props.client.getRepos(org, sortKey, sortDesc);
+    const promise = props.client.listRepos(org, sortKey, sortDesc);
     setIsPending(true);
     let cancelled = false;
     promise
@@ -76,8 +80,14 @@ export default function Repos(props) {
   }, [props.client, org, sortKey, sortDesc, showAll]);
 
   return (
-    <div className="shadow">
-      <table className="bg-white relative">
+    <>
+      {isPending && (
+        <div className="p-2 delay-fade">
+          <Oval className="inline-block mr-2" stroke="#aaa"></Oval>
+          loading... and caching results
+        </div>
+      )}
+      <table className={`shadow bg-white relative ${isPending && "hidden"}`}>
         <thead>
           <tr>
             <RepoHeader
@@ -174,14 +184,14 @@ export default function Repos(props) {
               </td>
             </tr>
           )}
-          {isPending && (
-            <tr>
+          {repos.length === 0 && (
+            <tr className="bg-red-100">
               <td colSpan="100" className="py-1 px-2 sm:px-4">
-                <Oval stroke="#aaa"></Oval>
+                no repos found in {org}
               </td>
             </tr>
           )}
-          {!error && !isPending && !showAll && (
+          {!error && !showAll && repos.length > 100 && (
             <tr>
               <td colSpan="100">
                 <button
@@ -195,6 +205,6 @@ export default function Repos(props) {
           )}
         </tbody>
       </table>
-    </div>
+    </>
   );
 }
