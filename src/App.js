@@ -1,6 +1,6 @@
 import Client from "./client/Client.js";
 import Header from "./Header.js";
-import Repos from "./repos/Repos.js";
+import Org from "./org/Org.js";
 import Repo from "./repo/Repo.js";
 import {
   BrowserRouter as Router,
@@ -23,7 +23,7 @@ function App() {
             <Redirect to="/kubernetes"></Redirect>
           </Route>
           <Route exact path="/:org">
-            <Repos client={client}></Repos>
+            <Org client={client}></Org>
           </Route>
           <Route exact path="/:org/:repo">
             <Repo client={client}></Repo>

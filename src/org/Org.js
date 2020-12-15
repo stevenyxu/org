@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import RepoColorBarCell from "./RepoColorBarCell";
 import RepoHeader from "./RepoHeader";
 
-export default function Repos(props) {
+export default function Org(props) {
   const { org } = useParams();
   const [repos, setRepos] = useState([]);
   const [sortKey, setSortKey] = useState("forks");
