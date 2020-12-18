@@ -55,6 +55,17 @@ export default function Header(props) {
     ORGS_SET.add(org);
   }
 
+  // Speculative prefetch for improved performance
+  const orgs = Array.from(ORGS_SET);
+
+  (async function prefetchOrgs() {
+    await props.client.listRepos(orgs[0]);
+    await props.client.listRepos(orgs[orgs.length - 1]);
+    for (let i = 1; i < orgs.length; i++) {
+      await props.client.listRepos(orgs[i]);
+    }
+  })();
+
   async function handleAdd() {
     const org = prompt('Organization id (e.g. "kubernetes")');
     history.push(`/${org}`);
@@ -73,7 +84,7 @@ export default function Header(props) {
         onChange={(e) => handleSelect(e.target.value)}
         className="mr-2"
       >
-        {Array.from(ORGS_SET).map((org) => (
+        {orgs.map((org) => (
           <option key={org} value={org}>
             {org}
           </option>
